@@ -1,3 +1,4 @@
+import type * as React from "react";
 import {useEffect,useMemo,useRef,useState} from "react";
 import {Home,Library,Heart,ListMusic,Search,Settings,Plus,Play,Pause,SkipBack,SkipForward,Shuffle,Repeat,Volume2,Music2,Trash2,Clock3,SlidersHorizontal,FolderOpen} from "lucide-react";
 
