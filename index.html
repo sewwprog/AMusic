@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AMusic — плеєр для музики, яка в тебе вже є</title>
+  <meta name="description" content="AMusic — десктопний музичний плеєр для Windows. Локальна бібліотека MP3 і M4A, плейлисти, еквалайзер і спільний каталог, де люди діляться власними треками.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23b0442c'/><text x='16' y='23' font-size='19' text-anchor='middle' fill='%23fff' font-family='Georgia,serif'>A</text></svg>">
+  <style>
+    :root {
+      --bg: #f7f6f2;
+      --text: #1d1b18;
+      --muted: #6f6a61;
+      --line: #e2ded5;
+      --accent: #b0442c;
+      --accent-hover: #8f3521;
+    }
+
+    [data-theme="dark"] {
+      --bg: #161513;
+      --text: #edeae4;
+      --muted: #9a948a;
+      --line: #2e2b27;
+      --accent: #d0654c;
+      --accent-hover: #e07d64;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 17px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::selection { background: var(--accent); color: #fff; }
+
+    .wrap {
+      max-width: 40rem;
+      margin: 0 auto;
+      padding: 0 1.25rem;
+    }
+
+    /* header */
+
+    header {
+      padding: 1.5rem 0;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .logo {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.25rem;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .logo em {
+      font-style: normal;
+      color: var(--accent);
+    }
+
+    nav { display: flex; gap: 1.25rem; align-items: baseline; }
+
+    nav a, .theme-toggle {
+      font-size: 0.85rem;
+      color: var(--muted);
+      text-decoration: none;
+    }
+
+    nav a:hover { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+
+    .theme-toggle {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      padding: 0;
+    }
+
+    .theme-toggle:hover { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+
+    /* hero */
+
+    .hero { padding: 4.5rem 0 3.5rem; }
+
+    h1 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(2.15rem, 6vw, 3.1rem);
+      font-weight: 500;
+      line-height: 1.12;
+      letter-spacing: -0.015em;
+      margin-bottom: 1.35rem;
+    }
+
+    .hero p {
+      font-size: 1.12rem;
+      color: var(--muted);
+      max-width: 34rem;
+      margin-bottom: 2.25rem;
+    }
+
+    .btn {
+      display: inline-block;
+      background: var(--text);
+      color: var(--bg);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 0.8rem 1.4rem;
+      border-radius: 3px;
+      transition: background 0.15s;
+    }
+
+    .btn:hover { background: var(--accent); color: #fff; }
+
+    .hint {
+      margin-top: 0.9rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    /* sections */
+
+    section { padding: 2.75rem 0; border-top: 1px solid var(--line); }
+
+    h2 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.55rem;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      margin-bottom: 1.75rem;
+    }
+
+    /* features */
+
+    .feature {
+      display: grid;
+      grid-template-columns: 9.5rem 1fr;
+      gap: 0.5rem 1.5rem;
+      padding: 1.15rem 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .feature:first-of-type { border-top: none; padding-top: 0; }
+
+    .feature dt { font-weight: 600; font-size: 0.95rem; }
+
+    .feature dd { color: var(--muted); font-size: 0.97rem; }
+
+    /* prose */
+
+    .prose p { color: var(--muted); margin-bottom: 1rem; }
+    .prose p:last-child { margin-bottom: 0; }
+    .prose strong { color: var(--text); font-weight: 600; }
+
+    .note {
+      margin-top: 1.5rem;
+      padding: 0.95rem 1.15rem;
+      border-left: 2px solid var(--accent);
+      background: color-mix(in srgb, var(--accent) 5%, transparent);
+      font-size: 0.92rem;
+      color: var(--muted);
+    }
+
+    /* limitations */
+
+    ul.plain { list-style: none; }
+
+    ul.plain li {
+      padding: 0.45rem 0;
+      color: var(--muted);
+      font-size: 0.97rem;
+    }
+
+    ul.plain li::before {
+      content: "—";
+      color: var(--accent);
+      margin-right: 0.75rem;
+    }
+
+    .footnote {
+      margin-top: 1.35rem;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+
+    /* steps */
+
+    ol.steps { list-style: none; counter-reset: step; }
+
+    ol.steps li {
+      counter-increment: step;
+      padding: 0.85rem 0 0.85rem 2.5rem;
+      position: relative;
+      color: var(--muted);
+    }
+
+    ol.steps li + li { border-top: 1px solid var(--line); }
+
+    ol.steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 0.95rem;
+      width: 1.55rem;
+      height: 1.55rem;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78rem;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* footer */
+
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 2rem 0 3rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.5rem;
+      justify-content: space-between;
+      font-size: 0.84rem;
+      color: var(--muted);
+    }
+
+    footer a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+    footer a:hover { color: var(--accent); }
+
+    @media (max-width: 540px) {
+      .hero { padding: 3rem 0 2.5rem; }
+      nav a.hide-s { display: none; }
+      .feature { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="wrap">
+    <header>
+      <a class="logo" href="./">A<em>Music</em></a>
+      <nav>
+        <a class="hide-s" href="#features">Що вміє</a>
+        <a class="hide-s" href="#community">Спільнота</a>
+        <a href="#download">Завантажити</a>
+        <button class="theme-toggle" id="theme-toggle" type="button">темна тема</button>
+      </nav>
+    </header>
+
+    <main>
+      <div class="hero">
+        <h1>Плеєр для музики,<br>яка в тебе вже є</h1>
+        <p>AMusic збирає MP3 і M4A з твоїх папок в одну бібліотеку: пошук, плейлисти, еквалайзер. Плюс спільний каталог, куди люди викладають власні треки.</p>
+        <a class="btn" href="https://github.com/sewwprog/AMusic">Завантажити для Windows</a>
+        <p class="hint">v1.0.0 · Windows 10 та 11 · безкоштовно</p>
+      </div>
+
+      <section id="features">
+        <h2>Що вміє</h2>
+        <dl>
+          <div class="feature">
+            <dt>Бібліотека</dt>
+            <dd>Вкажи папку — і всі MP3 та M4A з’являться в програмі. Пошук, плейлисти, улюблені, черга. Бібліотека й статистика живуть у профілі програми на твоєму комп’ютері.</dd>
+          </div>
+          <div class="feature">
+            <dt>Плеєр</dt>
+            <dd>Еквалайзер на п’ять смуг, режим Replay, керування з клавіатури. Нічого зайвого між тобою і звуком.</dd>
+          </div>
+          <div class="feature">
+            <dt>Вигляд</dt>
+            <dd>Темна й світла теми. Орієнтувалися на Telegram Desktop та iOS — вийшло спокійно, без блиску й ефектів.</dd>
+          </div>
+          <div class="feature">
+            <dt>Спільнота</dt>
+            <dd>Спільний каталог музики: слухай, завантажуй треки в бібліотеку, публікуй своє. Деталі — нижче.</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section id="community">
+        <h2>Музика для всіх</h2>
+        <div class="prose">
+          <p>Це частина AMusic, де користувачі діляться музикою одне з одним. Вхід — пошта і пароль, ті самі, що й у мобільному AMusic.</p>
+          <p>Публікувати можна <strong>лише власні записи</strong> або ті, на які маєш дозвіл. Формати — MP3, M4A і AAC, до 25 МБ на файл.</p>
+        </div>
+        <p class="note">Сесія входу діє до закриття програми — потім доведеться увійти знову. Це тимчасове рішення, а не фінальне.</p>
+      </section>
+
+      <section id="limits">
+        <h2>Що поки не вміє</h2>
+        <ul class="plain">
+          <li>Синхронізуватися з iPhone</li>
+          <li>Імпортувати зі Spotify чи YouTube</li>
+          <li>Редагувати обкладинки й метадані</li>
+          <li>Кастомізувати мобільний профіль</li>
+        </ul>
+        <p class="footnote">Це не баги й не випадкові пропуски. Просто ще не зроблено.</p>
+      </section>
+
+      <section id="download">
+        <h2>Як почати</h2>
+        <ol class="steps">
+          <li>Завантаж AMusic із <a href="https://github.com/sewwprog/AMusic">репозиторію на GitHub</a>.</li>
+          <li>Запусти програму — вона попросить вибрати папку з музикою.</li>
+          <li>Усе. Налаштування, плейлисти й спільнота — уже в програмі.</li>
+        </ol>
+        <p class="footnote">Для збірки з вихідників потрібні Node.js, Rust і WebView2. Інструкції — у репозиторії.</p>
+      </section>
+    </main>
+
+    <footer>
+      <span>AMusic · музичний плеєр для Windows</span>
+      <span><a href="https://github.com/sewwprog/AMusic">GitHub</a> · © 2026</span>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var btn = document.getElementById("theme-toggle");
+      var saved = localStorage.getItem("amusic-theme");
+      if (saved === "dark" || saved === "light") {
+        root.setAttribute("data-theme", saved);
+      } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        root.setAttribute("data-theme", "dark");
+      }
+
+      function label() {
+        var dark = root.getAttribute("data-theme") === "dark";
+        btn.textContent = dark ? "світла тема" : "темна тема";
+      }
+
+      label();
+
+      btn.addEventListener("click", function () {
+        var dark = root.getAttribute("data-theme") === "dark";
+        var next = dark ? "light" : "dark";
+        root.setAttribute("data-theme", next);
+        localStorage.setItem("amusic-theme", next);
+        label();
+      });
+    })();
+  </script>
+
+</body>
+</html>
