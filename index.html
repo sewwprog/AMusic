@@ -1,28 +1,29 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="uk" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#000000">
   <title>AMusic — плеєр для музики, яка в тебе вже є</title>
-  <meta name="description" content="AMusic — десктопний музичний плеєр для Windows. Локальна бібліотека MP3 і M4A, плейлисти, еквалайзер і спільний каталог, де люди діляться власними треками.">
+  <meta name="description" content="AMusic — десктопний музичний плеєр для Windows. Локальна бібліотека MP3 і M4A, плейлисти, еквалайзер і спільний каталог, де люди діляться власними треками. Мобільна версія — поки що тільки для iPhone.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23b0442c'/><text x='16' y='23' font-size='19' text-anchor='middle' fill='%23fff' font-family='Georgia,serif'>A</text></svg>">
   <style>
     :root {
+      --bg: #000000;
+      --text: #f4f2ef;
+      --muted: #9e988f;
+      --line: #26241f;
+      --accent: #e06a4f;
+      --accent-hover: #f07d63;
+    }
+
+    [data-theme="light"] {
       --bg: #f7f6f2;
       --text: #1d1b18;
       --muted: #6f6a61;
       --line: #e2ded5;
       --accent: #b0442c;
       --accent-hover: #8f3521;
-    }
-
-    [data-theme="dark"] {
-      --bg: #161513;
-      --text: #edeae4;
-      --muted: #9a948a;
-      --line: #2e2b27;
-      --accent: #d0654c;
-      --accent-hover: #e07d64;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -62,6 +63,7 @@
       letter-spacing: -0.01em;
       color: var(--text);
       text-decoration: none;
+      flex-shrink: 0;
     }
 
     .logo em {
@@ -69,12 +71,13 @@
       color: var(--accent);
     }
 
-    nav { display: flex; gap: 1.25rem; align-items: baseline; }
+    nav { display: flex; gap: 1.25rem; align-items: baseline; flex-wrap: wrap; justify-content: flex-end; }
 
     nav a, .theme-toggle {
       font-size: 0.85rem;
       color: var(--muted);
       text-decoration: none;
+      white-space: nowrap;
     }
 
     nav a:hover { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
@@ -118,7 +121,7 @@
       font-weight: 600;
       padding: 0.8rem 1.4rem;
       border-radius: 3px;
-      transition: background 0.15s;
+      transition: background 0.15s, color 0.15s;
     }
 
     .btn:hover { background: var(--accent); color: #fff; }
@@ -127,6 +130,7 @@
       margin-top: 0.9rem;
       font-size: 0.82rem;
       color: var(--muted);
+      line-height: 1.75;
     }
 
     /* sections */
@@ -167,7 +171,7 @@
       margin-top: 1.5rem;
       padding: 0.95rem 1.15rem;
       border-left: 2px solid var(--accent);
-      background: color-mix(in srgb, var(--accent) 5%, transparent);
+      background: color-mix(in srgb, var(--accent) 8%, transparent);
       font-size: 0.92rem;
       color: var(--muted);
     }
@@ -240,10 +244,43 @@
     footer a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
     footer a:hover { color: var(--accent); }
 
-    @media (max-width: 540px) {
-      .hero { padding: 3rem 0 2.5rem; }
+    /* phones */
+
+    @media (max-width: 640px) {
+      body { font-size: 16px; }
+
+      .wrap { padding: 0 1.1rem; }
+
+      header { padding: 1.15rem 0; }
+      nav { gap: 0.95rem; }
       nav a.hide-s { display: none; }
-      .feature { grid-template-columns: 1fr; }
+
+      .hero { padding: 2.75rem 0 2.25rem; }
+      .hero p { font-size: 1.02rem; margin-bottom: 1.85rem; }
+
+      section { padding: 2.15rem 0; }
+      h2 { font-size: 1.4rem; margin-bottom: 1.35rem; }
+
+      .feature { grid-template-columns: 1fr; gap: 0.15rem; padding: 1rem 0; }
+      .feature dt { font-size: 0.92rem; }
+
+      .note { padding: 0.85rem 1rem; }
+
+      ol.steps li { padding: 0.8rem 0 0.8rem 2.15rem; }
+      ol.steps li::before { top: 0.85rem; }
+
+      footer {
+        flex-direction: column;
+        gap: 0.35rem;
+        padding: 1.75rem 0 2.5rem;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .btn {
+        display: block;
+        text-align: center;
+      }
     }
   </style>
 </head>
@@ -256,7 +293,7 @@
         <a class="hide-s" href="#features">Що вміє</a>
         <a class="hide-s" href="#community">Спільнота</a>
         <a href="#download">Завантажити</a>
-        <button class="theme-toggle" id="theme-toggle" type="button">темна тема</button>
+        <button class="theme-toggle" id="theme-toggle" type="button">світла тема</button>
       </nav>
     </header>
 
@@ -265,7 +302,10 @@
         <h1>Плеєр для музики,<br>яка в тебе вже є</h1>
         <p>AMusic збирає MP3 і M4A з твоїх папок в одну бібліотеку: пошук, плейлисти, еквалайзер. Плюс спільний каталог, куди люди викладають власні треки.</p>
         <a class="btn" href="https://github.com/sewwprog/AMusic">Завантажити для Windows</a>
-        <p class="hint">v1.0.0 · Windows 10 та 11 · безкоштовно</p>
+        <p class="hint">
+          v1.0.0 · безкоштовно<br>
+          Десктоп: Windows 10 та 11 · Мобільна: поки що тільки iPhone
+        </p>
       </div>
 
       <section id="features">
@@ -293,7 +333,7 @@
       <section id="community">
         <h2>Музика для всіх</h2>
         <div class="prose">
-          <p>Це частина AMusic, де користувачі діляться музикою одне з одним. Вхід — пошта і пароль, ті самі, що й у мобільному AMusic.</p>
+          <p>Це частина AMusic, де користувачі діляться музикою одне з одним. Вхід — пошта і пароль, ті самі, що й у мобільному AMusic для iPhone.</p>
           <p>Публікувати можна <strong>лише власні записи</strong> або ті, на які маєш дозвіл. Формати — MP3, M4A і AAC, до 25 МБ на файл.</p>
         </div>
         <p class="note">Сесія входу діє до закриття програми — потім доведеться увійти знову. Це тимчасове рішення, а не фінальне.</p>
@@ -302,7 +342,8 @@
       <section id="limits">
         <h2>Що поки не вміє</h2>
         <ul class="plain">
-          <li>Синхронізуватися з iPhone</li>
+          <li>Мобільна версія для Android — зараз програма є лише на iPhone</li>
+          <li>Синхронізуватися між ПК і телефоном</li>
           <li>Імпортувати зі Spotify чи YouTube</li>
           <li>Редагувати обкладинки й метадані</li>
           <li>Кастомізувати мобільний профіль</li>
@@ -322,7 +363,7 @@
     </main>
 
     <footer>
-      <span>AMusic · музичний плеєр для Windows</span>
+      <span>AMusic · Windows і iPhone</span>
       <span><a href="https://github.com/sewwprog/AMusic">GitHub</a> · © 2026</span>
     </footer>
   </div>
@@ -334,8 +375,6 @@
       var saved = localStorage.getItem("amusic-theme");
       if (saved === "dark" || saved === "light") {
         root.setAttribute("data-theme", saved);
-      } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-        root.setAttribute("data-theme", "dark");
       }
 
       function label() {
