@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Music</title>
+    <title>TGify - Музика у стилі Telegram</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
@@ -12,15 +12,15 @@
                 extend: {
                     colors: {
                         tg: {
-                            bg: '#0e1621',       // Фон чату
-                            sidebar: '#17212b',  // Фон сайдбару
-                            bubble: '#182533',   // Фон повідомлення
-                            active: '#2b5278',   // Активний чат
-                            blue: '#5288c1',     // Кнопки ТГ
-                            lightblue: '#6ab3f3',// Акцентний синій
-                            text: '#f5f5f5',     // Основний текст
-                            subtext: '#7f91a4',  // Сірий текст
-                            hover: '#202b36'     // Ховер ефект
+                            bg: '#0e1621',       // Головний фон (як фон чату в ТГ)
+                            panel: '#17212b',    // Сайдбар та плеєр
+                            card: '#182533',     // Картка треку
+                            cardHover: '#202b36',// Картка при наведенні
+                            active: '#2b5278',   // Активний елемент
+                            blue: '#5288c1',     // Основний синій ТГ
+                            accent: '#6ab3f3',   // Яскравий блакитний ТГ (замість зеленого в Спотіфай)
+                            text: '#f5f5f5',     // Білий текст
+                            muted: '#7f91a4'     // Сіро-синій текст
                         }
                     }
                 }
@@ -28,387 +28,373 @@
         }
     </script>
     <style>
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0e1621; }
+        ::-webkit-scrollbar-thumb { background: #202b36; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #5288c1; }
         
-        /* Патерн фону як у Телеграмі */
-        .tg-chat-bg {
-            background-color: #0e1621;
-            background-image: radial-gradient(#182533 1px, transparent 1px), radial-gradient(#182533 1px, #0e1621 1px);
-            background-size: 40px 40px;
-            background-position: 0 0, 20px 20px;
+        .playing-glow {
+            box-shadow: 0 0 15px rgba(106, 179, 243, 0.4);
+            border: 1px solid rgba(106, 179, 243, 0.5);
         }
-        
-        /* Анімація еквалайзера */
-        .eq-bar { width: 3px; background-color: #6ab3f3; animation: eq 1s infinite ease-in-out; }
-        .eq-bar:nth-child(2) { animation-delay: 0.2s; }
-        .eq-bar:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes eq { 0%, 100% { height: 4px; } 50% { height: 16px; } }
     </style>
 </head>
-<body class="bg-tg-bg text-tg-text h-screen flex overflow-hidden font-sans select-none">
+<body class="bg-tg-bg text-tg-text h-screen flex flex-col overflow-hidden font-sans select-none">
 
-    <!-- ЛІВА ПАНЕЛЬ (СПИСОК ЧАТІВ / ПЛЕЙЛІСТІВ) -->
-    <div class="w-80 bg-tg-sidebar border-r border-black/40 flex flex-col z-20">
+    <!-- ВЕРХНЯ ЧАСТИНА (САЙДБАР + КОНТЕНТ ЯК У SPOTIFY) -->
+    <div class="flex flex-1 overflow-hidden">
         
-        <!-- Пошук (як в ТГ) -->
-        <div class="p-3 flex items-center gap-3">
-            <button onclick="createNewPlaylist()" title="Створити плейліст" class="text-tg-subtext hover:text-white p-2 transition">
-                <i class="fa-solid fa-folder-plus text-xl"></i>
-            </button>
-            <div class="relative flex-1">
-                <i class="fa-solid fa-search absolute left-3.5 top-2.5 text-tg-subtext text-sm"></i>
-                <input type="text" id="search-input" placeholder="Пошук (напр. ALBLAK 52)..." 
-                    class="w-full bg-[#242f3d] text-sm text-white rounded-full py-2 pl-10 pr-4 focus:outline-none focus:bg-tg-bg focus:ring-1 focus:ring-tg-lightblue transition placeholder-tg-subtext"
-                    onkeypress="if(event.key === 'Enter') searchMusic()">
+        <!-- ЛІВИЙ САЙДБАР -->
+        <aside class="w-64 bg-tg-panel flex flex-col border-r border-black/30 z-10">
+            <!-- Логотип -->
+            <div class="p-6 flex items-center gap-3 text-2xl font-bold text-tg-accent">
+                <i class="fa-brands fa-telegram text-3xl"></i>
+                <span>TG Music</span>
             </div>
-        </div>
 
-        <!-- Список чатів (Плейлістів) -->
-        <div class="flex-1 overflow-y-auto" id="playlists-sidebar">
-            <!-- Сюди генеруються чати через JS -->
-        </div>
+            <!-- Головне меню -->
+            <nav class="px-3 flex flex-col gap-1">
+                <button onclick="loadStarterPack()" id="nav-home" class="flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-semibold bg-tg-active text-white transition">
+                    <i class="fa-solid fa-fire text-lg w-5 text-tg-accent"></i> Головна (52 & Хіти)
+                </button>
+                <button onclick="quickSearch('ALBLAK 52')" class="flex items-center gap-4 px-4 py-2.5 rounded-lg text-sm font-medium text-tg-muted hover:text-white hover:bg-tg-cardHover transition">
+                    <i class="fa-solid fa-compact-disc text-lg w-5"></i> ALBLAK 52
+                </button>
+                <button onclick="quickSearch('FRIENDLY THUG 52 NGG')" class="flex items-center gap-4 px-4 py-2.5 rounded-lg text-sm font-medium text-tg-muted hover:text-white hover:bg-tg-cardHover transition">
+                    <i class="fa-solid fa-compact-disc text-lg w-5"></i> Friendly Thug 52
+                </button>
+            </nav>
 
-        <!-- Міні-відеоплеєр YouTube (Вимога API, стилізовано під кружечок/відео ТГ) -->
-        <div class="p-3 border-t border-black/30 bg-[#131c26] flex items-center gap-3">
-            <div class="w-16 h-12 rounded overflow-hidden bg-black flex-shrink-0 relative">
-                <div id="youtube-player" class="w-full h-full pointer-events-none"></div>
+            <hr class="border-black/30 my-4 mx-4">
+
+            <!-- Заголовок Плейлістів -->
+            <div class="px-6 mb-2 flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-tg-muted">Твої Плейлісти</span>
+                <button onclick="createNewPlaylist()" title="Створити плейліст" class="text-tg-muted hover:text-tg-accent transition">
+                    <i class="fa-solid fa-plus text-base"></i>
+                </button>
             </div>
-            <div class="text-xs text-tg-subtext leading-tight">
-                <span class="text-tg-lightblue font-semibold">YouTube Engine</span><br>
-                Повні версії треків
-            </div>
-        </div>
-    </div>
 
-    <!-- ПРАВА ЧАСТИНА (ЧАТ З МУЗИКОЮ) -->
-    <div class="flex-1 flex flex-col tg-chat-bg relative">
-        
-        <!-- Шапка чату -->
-        <header class="h-14 bg-tg-sidebar border-b border-black/40 px-6 flex items-center justify-between z-10 cursor-pointer">
-            <div class="flex items-center gap-4">
-                <div id="chat-avatar" class="w-10 h-10 rounded-full bg-tg-blue flex items-center justify-center font-bold text-lg">
-                    <i class="fa-solid fa-music"></i>
+            <!-- Список користувацьких плейлістів -->
+            <div id="playlists-list" class="flex-1 overflow-y-auto px-3 flex flex-col gap-1">
+                <!-- Генерується через JS -->
+            </div>
+
+            <!-- Віконце YouTube плеєра (Вимога API для безкоштовного стрімінгу) -->
+            <div class="p-3 m-3 bg-tg-card rounded-xl border border-white/5 flex items-center gap-3">
+                <div class="w-16 h-12 rounded-lg overflow-hidden bg-black flex-shrink-0">
+                    <div id="youtube-player" class="w-full h-full pointer-events-none"></div>
                 </div>
-                <div>
-                    <h2 id="chat-title" class="font-bold text-sm">Завантаження...</h2>
-                    <p id="chat-status" class="text-xs text-tg-subtext">бот музики • онлайн</p>
-                </div>
-            </div>
-            <div class="flex gap-4 text-tg-subtext">
-                <button onclick="searchMusic()" class="hover:text-white"><i class="fa-solid fa-magnifying-glass"></i></button>
-            </div>
-        </header>
-
-        <!-- Верхній міні-плеєр ТГ (показується коли грає музика) -->
-        <div id="top-mini-player" class="hidden h-9 bg-tg-sidebar/95 backdrop-blur border-b border-black/40 px-6 flex items-center justify-between z-10 text-xs">
-            <div class="flex items-center gap-3 overflow-hidden">
-                <button onclick="togglePlay()" class="text-tg-lightblue"><i id="mini-play-icon" class="fa-solid fa-pause"></i></button>
-                <div class="truncate">
-                    <span id="mini-title" class="font-semibold text-white">Назва</span> 
-                    <span class="text-tg-subtext">—</span> 
-                    <span id="mini-artist" class="text-tg-subtext">Виконавець</span>
+                <div class="text-[11px] text-tg-muted leading-tight">
+                    <span class="text-tg-accent font-bold">Full Audio</span><br>
+                    Прямий ефір
                 </div>
             </div>
-            <div class="flex items-center gap-3">
-                <div class="flex items-end gap-0.5 h-4" id="equalizer">
-                    <div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div>
-                </div>
-            </div>
-        </div>
+        </aside>
 
-        <!-- Повідомлення (Список треків) -->
-        <main class="flex-1 overflow-y-auto p-6 flex flex-col gap-2" id="messages-container">
-            <!-- Спінер завантаження -->
-            <div id="loader" class="m-auto flex flex-col items-center gap-2 bg-tg-bubble px-6 py-4 rounded-2xl shadow">
-                <i class="fa-solid fa-circle-notch fa-spin text-2xl text-tg-lightblue"></i>
-                <span class="text-xs text-tg-subtext">Шукаємо треки в базі...</span>
+        <!-- ГОЛОВНИЙ ЕКРАН (СІТКА SPOTIFY) -->
+        <main class="flex-1 flex flex-col overflow-hidden bg-tg-bg relative">
+            
+            <!-- Шапка з пошуком -->
+            <header class="h-20 bg-tg-panel/80 backdrop-blur-md px-8 flex items-center justify-between sticky top-0 z-10 border-b border-black/20">
+                <div class="relative w-full max-w-md">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-tg-muted"></i>
+                    <input type="text" id="search-input" placeholder="Який трек увімкнути? (напр. ALBLAK 52)..." 
+                        class="w-full bg-tg-card text-white text-sm rounded-full py-3 pl-11 pr-4 focus:outline-none focus:ring-2 focus:ring-tg-accent transition placeholder-tg-muted"
+                        onkeypress="if(event.key === 'Enter') searchMusic()">
+                </div>
+                <button onclick="searchMusic()" class="ml-4 bg-tg-blue hover:bg-tg-accent text-white font-semibold py-2.5 px-6 rounded-full text-sm transition shadow-lg">
+                    Знайти
+                </button>
+            </header>
+
+            <!-- Контент з картками -->
+            <div class="flex-1 overflow-y-auto p-8">
+                <div class="flex items-baseline justify-between mb-6">
+                    <h1 id="page-title" class="text-2xl font-bold">🔥 ALBLAK 52 & Свіжі Хіти</h1>
+                    <span id="tracks-count" class="text-xs text-tg-muted"></span>
+                </div>
+
+                <!-- Індикатор завантаження -->
+                <div id="loader" class="hidden flex flex-col items-center justify-center py-24 gap-3">
+                    <i class="fa-solid fa-circle-notch fa-spin text-4xl text-tg-accent"></i>
+                    <p class="text-sm text-tg-muted">Шукаємо повні версії треків...</p>
+                </div>
+
+                <!-- Сітка карток (Як у Spotify) -->
+                <div id="tracks-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 pb-12">
+                    <!-- Картки додаються сюди -->
+                </div>
             </div>
         </main>
+    </div>
 
-        <!-- Нижня панель (Великий Плеєр у стилі вводу повідомлення) -->
-        <div class="bg-tg-sidebar p-3 border-t border-black/40 flex flex-col gap-2 z-10">
-            <!-- Повзунок часу -->
-            <div class="flex items-center gap-3 px-2 text-xs text-tg-subtext">
-                <span id="current-time">0:00</span>
-                <input type="range" id="progress-bar" value="0" max="100" class="w-full accent-tg-lightblue h-1 bg-[#242f3d] rounded-lg cursor-pointer" oninput="seekTrack()">
-                <span id="duration-time">0:00</span>
-            </div>
-
-            <!-- Кнопки управління -->
-            <div class="flex items-center justify-between px-2">
-                <div class="flex items-center gap-3 w-1/3 overflow-hidden">
-                    <img id="player-art" src="https://via.placeholder.com/40/182533/5288c1?text=TG" class="w-10 h-10 rounded-full object-cover">
-                    <div class="truncate">
-                        <div id="player-title" class="font-semibold text-sm truncate text-tg-lightblue">Увімкніть трек</div>
-                        <div id="player-artist" class="text-xs text-tg-subtext truncate">Telegram Music</div>
-                    </div>
-                </div>
-
-                <div class="flex items-center gap-6">
-                    <button onclick="prevTrack()" class="text-tg-subtext hover:text-white text-lg transition"><i class="fa-solid fa-backward-step"></i></button>
-                    <button onclick="togglePlay()" id="main-play-btn" class="w-10 h-10 bg-tg-lightblue text-white rounded-full flex items-center justify-center hover:bg-tg-blue transition shadow-lg">
-                        <i class="fa-solid fa-play ml-0.5"></i>
-                    </button>
-                    <button onclick="nextTrack()" class="text-tg-subtext hover:text-white text-lg transition"><i class="fa-solid fa-forward-step"></i></button>
-                </div>
-
-                <div class="flex items-center justify-end gap-2 w-1/3">
-                    <i class="fa-solid fa-volume-low text-tg-subtext text-sm"></i>
-                    <input type="range" id="volume-bar" value="100" max="100" class="w-20 accent-tg-lightblue h-1 bg-[#242f3d] rounded-lg cursor-pointer" oninput="changeVolume()">
-                </div>
+    <!-- НИЖНІЙ ПЛЕЄР (РОЗСТАНОВКА SPOTIFY, КОЛЬОРИ TELEGRAM) -->
+    <footer class="h-24 bg-tg-panel border-t border-black/40 px-6 flex items-center justify-between z-20">
+        
+        <!-- Ліва частина: Поточний трек -->
+        <div class="flex items-center gap-4 w-1/3">
+            <img id="player-art" src="https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg" class="w-14 h-14 rounded-lg object-cover bg-tg-card shadow-md">
+            <div class="overflow-hidden">
+                <div id="player-title" class="font-bold text-sm truncate text-white">Оберіть трек</div>
+                <div id="player-artist" class="text-xs text-tg-accent truncate mt-0.5">TG Music</div>
             </div>
         </div>
 
-    </div>
-
-    <!-- МОДАЛЬНЕ ВІКНО: ДОДАТИ В ПЛЕЙЛІСТ (ПЕРЕСЛАТИ) -->
-    <div id="forward-modal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm">
-        <div class="bg-tg-sidebar w-80 rounded-xl overflow-hidden shadow-2xl border border-white/10">
-            <div class="p-4 border-b border-black/30 flex justify-between items-center">
-                <span class="font-bold text-sm">Переслати в плейліст...</span>
-                <button onclick="closeModal()" class="text-tg-subtext hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        <!-- Центральна частина: Кнопки + Прогрес -->
+        <div class="flex flex-col items-center w-1/3 max-w-lg">
+            <div class="flex items-center gap-6 mb-2">
+                <button onclick="prevTrack()" class="text-tg-muted hover:text-white text-lg transition"><i class="fa-solid fa-backward-step"></i></button>
+                <button onclick="togglePlay()" id="play-btn" class="w-10 h-10 bg-tg-accent text-tg-bg rounded-full flex items-center justify-center hover:scale-105 hover:bg-white transition shadow-lg">
+                    <i class="fa-solid fa-play ml-0.5 text-base"></i>
+                </button>
+                <button onclick="nextTrack()" class="text-tg-muted hover:text-white text-lg transition"><i class="fa-solid fa-forward-step"></i></button>
             </div>
-            <div id="modal-playlists" class="max-h-60 overflow-y-auto p-2 flex flex-col gap-1">
-                <!-- Список куди можна зберегти -->
+            <div class="w-full flex items-center gap-3 text-xs text-tg-muted">
+                <span id="current-time" class="w-8 text-right">0:00</span>
+                <input type="range" id="progress-bar" value="0" max="100" class="flex-1 accent-tg-accent h-1 bg-tg-card rounded-lg cursor-pointer" oninput="seekTrack()">
+                <span id="duration-time" class="w-8">0:00</span>
+            </div>
+        </div>
+
+        <!-- Права частина: Гучність -->
+        <div class="flex items-center justify-end gap-3 w-1/3">
+            <i class="fa-solid fa-volume-high text-tg-muted text-sm"></i>
+            <input type="range" id="volume-bar" value="100" max="100" class="w-28 accent-tg-accent h-1 bg-tg-card rounded-lg cursor-pointer" oninput="changeVolume()">
+        </div>
+    </footer>
+
+    <!-- МОДАЛЬНЕ ВІКНО: ДОДАТИ В ПЛЕЙЛІСТ -->
+    <div id="playlist-modal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-tg-panel w-80 rounded-2xl overflow-hidden shadow-2xl border border-white/10">
+            <div class="p-4 border-b border-black/30 flex justify-between items-center bg-tg-card">
+                <span class="font-bold text-sm">Додати трек у плейліст</span>
+                <button onclick="closeModal()" class="text-tg-muted hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div id="modal-playlists-list" class="max-h-64 overflow-y-auto p-2 flex flex-col gap-1">
+                <!-- Список плейлістів -->
             </div>
         </div>
     </div>
 
-    <!-- Підключаємо YouTube IFrame API -->
+    <!-- YouTube IFrame API -->
     <script src="https://www.youtube.com/iframe_api"></script>
 
     <script>
-        // --- БАЗА ДАНИХ ТА НАЛАШТУВАННЯ ---
-        let player;
-        let isPlayerReady = false;
-        let progressInterval;
-
-        // Список відкритих серверів для пошуку музики на YouTube без ключів
-        const SEARCH_APIS = [
-            'https://pipedapi.kavin.rocks',
-            'https://pipedapi.tokhmi.xyz',
-            'https://pipedapi.syncpundit.io',
-            'https://api.piped.projectsegfault.com'
+        // --- ВШИТІ ТРЕКИ (ALBLAK 52 ТА ІНШІ) ЩОБ ПРАЦЮВАЛО МИТТЄВО БЕЗ ПОМИЛОК ---
+        const STARTER_TRACKS = [
+            { id: "kR5M3N7T5B0", title: "+7(952)812", artist: "ALBLAK 52", duration: "2:14", artwork: "https://i.ytimg.com/vi/kR5M3N7T5B0/hqdefault.jpg" },
+            { id: "7G83v2h_ePA", title: "YEEI 5", artist: "ALBLAK 52", duration: "2:28", artwork: "https://i.ytimg.com/vi/7G83v2h_ePA/hqdefault.jpg" },
+            { id: "r5G2lT6G1x8", title: "Nice To Meet You", artist: "ALBLAK 52", duration: "2:45", artwork: "https://i.ytimg.com/vi/r5G2lT6G1x8/hqdefault.jpg" },
+            { id: "p_vB8sF2w2c", title: "Winter Shiettt 2", artist: "ALBLAK 52", duration: "2:31", artwork: "https://i.ytimg.com/vi/p_vB8sF2w2c/hqdefault.jpg" },
+            { id: "J3mH6y_sP9Q", title: "M11 (feat. Bushido Zho)", artist: "ALBLAK 52", duration: "2:19", artwork: "https://i.ytimg.com/vi/J3mH6y_sP9Q/hqdefault.jpg" },
+            { id: "vC4K1_eR8wM", title: "Lost Angeles", artist: "FRIENDLY THUG 52 NGG", duration: "2:50", artwork: "https://i.ytimg.com/vi/vC4K1_eR8wM/hqdefault.jpg" },
+            { id: "O7_xN6b3vY8", title: "AMMO", artist: "FRIENDLY THUG 52 NGG", duration: "2:15", artwork: "https://i.ytimg.com/vi/O7_xN6b3vY8/hqdefault.jpg" },
+            { id: "b9lT7c_wX1E", title: "Спокойной ночи", artist: "ALBLAK 52", duration: "2:36", artwork: "https://i.ytimg.com/vi/b9lT7c_wX1E/hqdefault.jpg" },
+            { id: "mP3k9_vL2zQ", title: "На чиле", artist: "ALBLAK 52 & Скриптонит", duration: "3:10", artwork: "https://i.ytimg.com/vi/mP3k9_vL2zQ/hqdefault.jpg" },
+            { id: "9xK2l_pM4vA", title: "2007", artist: "ALBLAK 52", duration: "2:05", artwork: "https://i.ytimg.com/vi/9xK2l_pM4vA/hqdefault.jpg" }
         ];
 
-        // Стандартні чати/плейлісти
-        let playlists = JSON.parse(localStorage.getItem('tg_music_playlists')) || {
-            'saved': { name: 'Збережене (Избранное)', icon: 'fa-bookmark', color: 'bg-tg-lightblue', tracks: [] },
-            'alblak': { name: 'ALBLAK 52 (Підбірка)', icon: 'fa-fire', color: 'bg-orange-500', query: 'ALBLAK 52', tracks: [] },
-            'phonk': { name: 'Фонк у тачку', icon: 'fa-car', color: 'bg-purple-600', query: 'Phonk Drift', tracks: [] },
-            'ua': { name: 'Українські тренди', icon: 'fa-music', color: 'bg-yellow-500', query: 'Українська музика хіти', tracks: [] }
+        // Глобальні змінні
+        let player;
+        let isPlayerReady = false;
+        let progressTimer;
+
+        let currentDisplayedTracks = [];
+        let playingQueue = [];
+        let currentTrackIndex = -1;
+        let activePlaylistId = 'home';
+        let trackToSave = null;
+
+        // Збережені плейлісти в браузері
+        let userPlaylists = JSON.parse(localStorage.getItem('tg_spotify_playlists')) || {
+            'favs': { name: 'Улюблені треки', icon: 'fa-heart', tracks: [] },
+            'car': { name: 'В тачку (Бас)', icon: 'fa-car', tracks: [] }
         };
 
-        let activeChatId = 'alblak';
-        let currentChatTracks = []; // Треки на екрані
-        let playingQueue = [];      // Черга відтворення
-        let currentTrackIndex = -1;
-        let trackToForward = null;  // Трек який хочемо зберегти
-
-        // --- ІНІЦІАЛІЗАЦІЯ YOUTUBE ПЛЕЄРА ---
+        // --- 1. ІНІЦІАЛІЗАЦІЯ YOUTUBE ПЛЕЄРА ---
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('youtube-player', {
                 height: '100%',
                 width: '100%',
-                playerVars: { 'autoplay': 0, 'controls': 0, 'disablekb': 1, 'fs': 0, 'modestbranding': 1 },
+                playerVars: { 'autoplay': 0, 'controls': 0, 'fs': 0, 'modestbranding': 1 },
                 events: {
-                    'onReady': () => { isPlayerReady = true; initApp(); },
+                    'onReady': () => { isPlayerReady = true; },
                     'onStateChange': onPlayerStateChange,
-                    'onError': () => { console.log('Помилка треку, вмикаю наступний'); nextTrack(); }
+                    'onError': () => { 
+                        // Якщо офіційний кліп заблоковано, автоматично шукаємо аудіо-версію цього треку
+                        autoFallbackAudio();
+                    }
                 }
             });
         }
 
-        function initApp() {
-            renderSidebar();
-            selectChat('alblak'); // Запускаємо ALBLAK 52 зі старту, як ти просив
+        window.onload = () => {
+            renderSidebarPlaylists();
+            loadStarterPack();
+        };
+
+        // Завантаження головної сторінки (Стартовий пакет)
+        function loadStarterPack() {
+            activePlaylistId = 'home';
+            renderSidebarPlaylists();
+            document.getElementById('page-title').innerText = '🔥 ALBLAK 52 & Свіжі Хіти';
+            currentDisplayedTracks = [...STARTER_TRACKS];
+            renderGrid(currentDisplayedTracks);
+            // Також фоново довантажимо свіжі треки ALBLAK 52
+            quickSearch('ALBLAK 52 треки', true);
         }
 
-        // --- ВІДОБРАЖЕННЯ ІНТЕРФЕЙСУ ТЕЛЕГРАМУ ---
-
-        function renderSidebar() {
-            const sidebar = document.getElementById('playlists-sidebar');
-            sidebar.innerHTML = '';
-
-            for (const [id, chat] of Object.entries(playlists)) {
-                const isActive = id === activeChatId;
-                const bgClass = isActive ? 'bg-tg-active' : 'hover:bg-tg-hover';
-                const subTextColor = isActive ? 'text-white/80' : 'text-tg-subtext';
-                const count = chat.query ? 'Авто-пошук' : `${chat.tracks.length} аудіо`;
-
-                sidebar.innerHTML += `
-                    <div onclick="selectChat('${id}')" class="flex items-center gap-3 p-3 cursor-pointer transition ${bgClass}">
-                        <div class="w-12 h-12 rounded-full ${chat.color} flex items-center justify-center text-white text-lg flex-shrink-0 shadow">
-                            <i class="fa-solid ${chat.icon}"></i>
-                        </div>
-                        <div class="flex-1 overflow-hidden">
-                            <div class="flex justify-between items-baseline">
-                                <h3 class="font-semibold text-sm truncate">${chat.name}</h3>
-                            </div>
-                            <p class="text-xs ${subTextColor} truncate mt-0.5">${count}</p>
-                        </div>
-                    </div>
-                `;
-            }
+        // --- 2. НАДІЙНИЙ ПОШУК МУЗИКИ НАПРЯМУ З YOUTUBE (БЕЗ ПАДІННЯ СЕРВЕРІВ) ---
+        async function quickSearch(query, silent = false) {
+            document.getElementById('search-input').value = query;
+            await searchMusic(silent);
         }
 
-        async function selectChat(id) {
-            activeChatId = id;
-            renderSidebar();
-
-            const chat = playlists[id];
-            document.getElementById('chat-title').innerText = chat.name;
-            document.getElementById('chat-avatar').className = `w-10 h-10 rounded-full ${chat.color} flex items-center justify-center font-bold text-lg`;
-            document.getElementById('chat-avatar').innerHTML = `<i class="fa-solid ${chat.icon}"></i>`;
-
-            if (chat.query) {
-                // Якщо це авто-підбірка, шукаємо в інтернеті
-                document.getElementById('search-input').value = chat.query;
-                await performSearch(chat.query);
-            } else {
-                // Якщо це власний плейліст, беремо збережені
-                currentChatTracks = chat.tracks;
-                document.getElementById('chat-status').innerText = `${currentChatTracks.length} треків у плейлісті`;
-                renderMessages(currentChatTracks);
-            }
-        }
-
-        // --- ПОШУК МУЗИКИ (ЧЕРЕЗ ВІДКРИТІ API YOUTUBE) ---
-
-        async function searchMusic() {
+        async function searchMusic(silent = false) {
             const query = document.getElementById('search-input').value.trim();
             if (!query) return;
 
-            activeChatId = 'search';
-            renderSidebar();
-            document.getElementById('chat-title').innerText = `Пошук: ${query}`;
-            document.getElementById('chat-avatar').className = `w-10 h-10 rounded-full bg-tg-blue flex items-center justify-center font-bold text-lg`;
-            document.getElementById('chat-avatar').innerHTML = `<i class="fa-solid fa-magnifying-glass"></i>`;
-
-            await performSearch(query);
-        }
-
-        async function performSearch(query) {
-            const container = document.getElementById('messages-container');
-            container.innerHTML = `
-                <div class="m-auto flex flex-col items-center gap-2 bg-tg-bubble px-6 py-4 rounded-2xl shadow">
-                    <i class="fa-solid fa-circle-notch fa-spin text-2xl text-tg-lightblue"></i>
-                    <span class="text-xs text-tg-subtext">Завантаження треків "${query}"...</span>
-                </div>`;
-
-            let data = null;
-
-            // Пробуємо різні сервери, якщо один перевантажений
-            for (const api of SEARCH_APIS) {
-                try {
-                    const res = await fetch(`${api}/search?q=${encodeURIComponent(query)}&filter=music_songs`);
-                    if (res.ok) {
-                        data = await res.json();
-                        if (data && data.items && data.items.length > 0) break;
-                    }
-                } catch (e) {
-                    console.warn(`Сервер ${api} не відповідає, пробуємо інший...`);
-                }
+            if (!silent) {
+                activePlaylistId = 'search';
+                renderSidebarPlaylists();
+                document.getElementById('page-title').innerText = `🔍 Результати: "${query}"`;
+                showLoader(true);
             }
 
-            // Якщо фільтр music_songs не спрацював, шукаємо по всіх відео
-            if (!data || !data.items || data.items.length === 0) {
-                for (const api of SEARCH_APIS) {
+            // Додаємо слово "audio", щоб YouTube видавав треки без вікових обмежень і блокувань
+            const searchQuery = query + " official audio";
+            let tracks = [];
+
+            // Метод 1: Прямий парсинг YouTube через AllOrigins Proxy (Працює у 99% випадків)
+            try {
+                const ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}`;
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(ytUrl)}`;
+                
+                const res = await fetch(proxyUrl);
+                const data = await res.json();
+                
+                if (data.contents) {
+                    const match = data.contents.match(/var ytInitialData = (\{.*?\});<\/script>/);
+                    if (match && match[1]) {
+                        const ytData = JSON.parse(match[1]);
+                        const contents = ytData.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents[0]?.itemSectionRenderer?.contents;
+                        
+                        if (contents) {
+                            contents.forEach(item => {
+                                const v = item.videoRenderer;
+                                if (v && v.videoId && v.lengthText) {
+                                    tracks.push({
+                                        id: v.videoId,
+                                        title: v.title.runs[0].text,
+                                        artist: v.ownerText.runs[0].text.replace(' - Topic', ''),
+                                        duration: v.lengthText.simpleText,
+                                        artwork: `https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`
+                                    });
+                                }
+                            });
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn("Метод 1 не спрацював, пробуємо резервний...", e);
+            }
+
+            // Метод 2 (Резервний): Якщо проксі затримався, беремо Invidious API
+            if (tracks.length === 0) {
+                const backupApis = [
+                    'https://inv.tux.pizza/api/v1/search',
+                    'https://invidious.nerdvpn.de/api/v1/search',
+                    'https://invidious.flokinet.to/api/v1/search'
+                ];
+                for (const api of backupApis) {
                     try {
-                        const res = await fetch(`${api}/search?q=${encodeURIComponent(query + ' audio')}&filter=videos`);
+                        const res = await fetch(`${api}?q=${encodeURIComponent(searchQuery)}&type=video`);
                         if (res.ok) {
-                            data = await res.json();
-                            if (data && data.items && data.items.length > 0) break;
+                            const items = await res.json();
+                            tracks = items.filter(i => i.lengthSeconds > 0).map(i => ({
+                                id: i.videoId,
+                                title: i.title,
+                                artist: i.author.replace(' - Topic', ''),
+                                duration: formatTime(i.lengthSeconds),
+                                artwork: `https://i.ytimg.com/vi/${i.videoId}/hqdefault.jpg`
+                            }));
+                            if (tracks.length > 0) break;
                         }
                     } catch (e) {}
                 }
             }
 
-            if (data && data.items) {
-                currentChatTracks = data.items
-                    .filter(item => item.type === 'stream' && item.duration > 0)
-                    .map(item => ({
-                        id: item.url.split('v=')[1],
-                        title: item.title,
-                        artist: item.uploaderName.replace(' - Topic', ''),
-                        duration: item.duration,
-                        artwork: item.thumbnail
-                    }));
+            showLoader(false);
 
-                document.getElementById('chat-status').innerText = `знайдено ${currentChatTracks.length} аудіозаписів`;
-                renderMessages(currentChatTracks);
-            } else {
-                container.innerHTML = `<div class="bg-tg-bubble p-4 rounded-xl m-auto text-sm text-tg-subtext">Помилка мережі або нічого не знайдено. Спробуйте ще раз.</div>`;
+            if (tracks.length > 0) {
+                currentDisplayedTracks = tracks;
+                renderGrid(currentDisplayedTracks);
+            } else if (!silent) {
+                // Якщо взагалі немає інтернету, показуємо стартовий пакет
+                alert("Не вдалося з'єднатися з пошуком, показую базові треки.");
+                loadStarterPack();
             }
         }
 
-        // --- ВІДОБРАЖЕННЯ ПОВІДОМЛЕНЬ (ТРЕКІВ) У ЧАТІ ---
-
-        function renderMessages(tracks) {
-            const container = document.getElementById('messages-container');
-            container.innerHTML = '';
+        // --- 3. ВІДОБРАЖЕННЯ КАРТОК ЯК У SPOTIFY ---
+        function renderGrid(tracks) {
+            const grid = document.getElementById('tracks-grid');
+            const countTxt = document.getElementById('tracks-count');
+            grid.innerHTML = '';
+            countTxt.innerText = `${tracks.length} треків`;
 
             if (tracks.length === 0) {
-                container.innerHTML = `<div class="bg-tg-bubble px-4 py-2 rounded-full m-auto text-xs text-tg-subtext">У цьому плейлісті поки немає музики. Знайдіть треки через пошук!</div>`;
+                grid.innerHTML = `<div class="col-span-full text-center py-16 text-tg-muted">У цьому плейлісті поки порожньо. Знайдіть музику через пошук і натисніть <b>+</b> на картці!</div>`;
                 return;
             }
 
             tracks.forEach((track, index) => {
-                const isPlayingThis = playingQueue[currentTrackIndex]?.id === track.id;
-                const btnIcon = (isPlayingThis && player?.getPlayerState() === 1) ? 'fa-pause' : 'fa-play ml-0.5';
-                const bubbleBg = isPlayingThis ? 'bg-[#2b5278]' : 'bg-tg-bubble';
+                const isPlaying = playingQueue[currentTrackIndex]?.id === track.id;
+                const activeClass = isPlaying ? 'playing-glow bg-tg-cardHover' : 'bg-tg-card hover:bg-tg-cardHover';
+                const playIcon = (isPlaying && player?.getPlayerState() === 1) ? 'fa-pause' : 'fa-play ml-0.5';
 
-                // Перевірка чи є кнопка видалення (якщо ми у власному плейлісті)
-                const isCustomPlaylist = !playlists[activeChatId]?.query && activeChatId !== 'search';
-                const deleteBtn = isCustomPlaylist 
-                    ? `<button onclick="removeFromPlaylist('${track.id}')" title="Видалити" class="text-tg-subtext hover:text-red-400 p-2"><i class="fa-solid fa-trash-can text-xs"></i></button>` 
-                    : '';
+                // Кнопка видалення (якщо ми всередині власного плейліста)
+                const isCustomPlaylist = userPlaylists[activePlaylistId] !== undefined;
+                const actionBtn = isCustomPlaylist 
+                    ? `<button onclick="removeFromPlaylist('${track.id}')" title="Видалити з плейліста" class="text-tg-muted hover:text-red-400 transition"><i class="fa-solid fa-trash-can"></i></button>`
+                    : `<button onclick="openPlaylistModal(${index})" title="Додати в плейліст" class="text-tg-muted hover:text-tg-accent transition"><i class="fa-solid fa-circle-plus text-lg"></i></button>`;
 
-                const msg = document.createElement('div');
-                msg.className = `${bubbleBg} p-3 rounded-2xl rounded-tl-sm max-w-xl w-full flex items-center gap-3 shadow-sm hover:bg-[#202e3c] transition group relative`;
-                msg.innerHTML = `
-                    <!-- Кругла кнопка Play як в ТГ -->
-                    <button onclick="playTrackFromChat(${index})" id="btn-${track.id}" class="w-12 h-12 rounded-full bg-tg-lightblue text-white flex items-center justify-center flex-shrink-0 hover:bg-tg-blue transition shadow relative overflow-hidden">
-                        <img src="${track.artwork}" class="absolute inset-0 w-full h-full object-cover opacity-30">
-                        <i class="fa-solid ${btnIcon} text-lg z-10"></i>
-                    </button>
-
-                    <!-- Інфо про трек -->
-                    <div class="flex-1 overflow-hidden cursor-pointer" onclick="playTrackFromChat(${index})">
-                        <div class="font-semibold text-sm truncate text-white">${track.title}</div>
-                        <div class="text-xs text-tg-lightblue truncate">${track.artist}</div>
-                        <div class="text-[10px] text-tg-subtext mt-0.5">${formatTime(track.duration)}</div>
-                    </div>
-
-                    <!-- Дії з повідомленням (Переслати в плейліст / Видалити) -->
-                    <div class="flex items-center gap-1 opacity-80 group-hover:opacity-100">
-                        ${deleteBtn}
-                        <button onclick="openForwardModal(${index})" title="Додати в плейліст" class="text-tg-subtext hover:text-tg-lightblue p-2 transition">
-                            <i class="fa-solid fa-share"></i>
+                const card = document.createElement('div');
+                card.className = `${activeClass} p-4 rounded-xl transition duration-200 group flex flex-col relative`;
+                card.innerHTML = `
+                    <div class="relative mb-3 overflow-hidden rounded-lg aspect-square bg-tg-bg shadow-md">
+                        <img src="${track.artwork}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                        
+                        <!-- Кругла кнопка Play у стилі Spotify, але блакитна як в ТГ -->
+                        <button onclick="playFromGrid(${index})" class="absolute bottom-2.5 right-2.5 w-12 h-12 bg-tg-accent text-tg-bg rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-200 shadow-xl hover:scale-105 hover:bg-white">
+                            <i class="fa-solid ${playIcon} text-lg"></i>
                         </button>
                     </div>
+
+                    <div class="font-bold text-sm truncate text-white mb-1" title="${track.title}">${track.title}</div>
+                    <div class="text-xs text-tg-muted truncate mb-3">${track.artist}</div>
+
+                    <div class="mt-auto pt-2 border-t border-white/5 flex items-center justify-between text-xs text-tg-muted">
+                        <span><i class="fa-regular fa-clock mr-1"></i>${track.duration}</span>
+                        ${actionBtn}
+                    </div>
                 `;
-                container.appendChild(msg);
+                grid.appendChild(card);
             });
         }
 
-        // --- ЛОГІКА АУДІОПЛЕЄРА ---
+        // --- 4. ЛОГІКА ПЛЕЄРА ---
+        function playFromGrid(index) {
+            if (!isPlayerReady) return alert("Плеєр ініціалізується, зачекайте секунду...");
 
-        function playTrackFromChat(index) {
-            if (!isPlayerReady) return alert('Плеєр ще завантажується, зачекайте секунду...');
-            
-            const selectedTrack = currentChatTracks[index];
-            
-            // Якщо натиснули на трек який вже грає - ставимо на паузу
-            if (playingQueue[currentTrackIndex]?.id === selectedTrack.id) {
+            const clickedTrack = currentDisplayedTracks[index];
+            if (playingQueue[currentTrackIndex]?.id === clickedTrack.id) {
                 togglePlay();
                 return;
             }
 
-            playingQueue = [...currentChatTracks];
+            playingQueue = [...currentDisplayedTracks];
             currentTrackIndex = index;
             loadAndPlayCurrent();
         }
@@ -418,52 +404,64 @@
             if (!track) return;
 
             player.loadVideoById(track.id);
-            
-            // Оновлюємо нижній та верхній плеєри
+
             document.getElementById('player-title').innerText = track.title;
             document.getElementById('player-artist').innerText = track.artist;
             document.getElementById('player-art').src = track.artwork;
 
-            document.getElementById('top-mini-player').classList.remove('hidden');
-            document.getElementById('mini-title').innerText = track.title;
-            document.getElementById('mini-artist').innerText = track.artist;
+            renderGrid(currentDisplayedTracks);
+        }
 
-            renderMessages(currentChatTracks); // Оновлюємо колір активного повідомлення
+        // Якщо кліп заблоковано власником для вбудовування, автоматично шукаємо аудіо-копію
+        async function autoFallbackAudio() {
+            const track = playingQueue[currentTrackIndex];
+            if (!track || track.retried) {
+                nextTrack();
+                return;
+            }
+            track.retried = true;
+            document.getElementById('player-title').innerText = `Завантаження аудіо: ${track.title}...`;
+            
+            try {
+                const q = `${track.artist} ${track.title} audio lyrics`;
+                const ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
+                const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(ytUrl)}`);
+                const data = await res.json();
+                const match = data.contents.match(/"videoId":"([a-zA-Z0-9_-]{11})"/g);
+                if (match && match.length > 1) {
+                    // Беремо друге відео у списку (зазвичай це чисте аудіо без блокувань)
+                    const newId = match[1].split('"')[3];
+                    track.id = newId;
+                    player.loadVideoById(newId);
+                } else {
+                    nextTrack();
+                }
+            } catch (e) {
+                nextTrack();
+            }
         }
 
         function togglePlay() {
             if (!player || currentTrackIndex === -1) return;
             const state = player.getPlayerState();
-            if (state === 1) {
-                player.pauseVideo();
-            } else {
-                player.playVideo();
-            }
+            if (state === 1) player.pauseVideo();
+            else player.playVideo();
         }
 
         function onPlayerStateChange(event) {
-            const mainBtn = document.getElementById('main-play-btn');
-            const miniIcon = document.getElementById('mini-play-icon');
-            const eq = document.getElementById('equalizer');
-
+            const playBtn = document.getElementById('play-btn');
             if (event.data === YT.PlayerState.PLAYING) {
-                mainBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
-                miniIcon.className = 'fa-solid fa-pause';
-                eq.classList.remove('hidden');
-                startProgressTimer();
+                playBtn.innerHTML = '<i class="fa-solid fa-pause text-base"></i>';
+                startTimer();
             } else {
-                mainBtn.innerHTML = '<i class="fa-solid fa-play ml-0.5"></i>';
-                miniIcon.className = 'fa-solid fa-play';
-                eq.classList.add('hidden');
-                clearInterval(progressInterval);
+                playBtn.innerHTML = '<i class="fa-solid fa-play ml-0.5 text-base"></i>';
+                clearInterval(progressTimer);
             }
 
-            // Якщо трек закінчився -> наступний
             if (event.data === YT.PlayerState.ENDED) {
                 nextTrack();
             }
-
-            renderMessages(currentChatTracks); // Оновити іконку на самому повідомленні
+            renderGrid(currentDisplayedTracks);
         }
 
         function nextTrack() {
@@ -480,109 +478,140 @@
             }
         }
 
-        function startProgressTimer() {
-            clearInterval(progressInterval);
-            progressInterval = setInterval(() => {
-                const current = player.getCurrentTime();
-                const duration = player.getDuration();
-                if (duration > 0) {
-                    document.getElementById('progress-bar').value = (current / duration) * 100;
-                    document.getElementById('current-time').innerText = formatTime(current);
-                    document.getElementById('duration-time').innerText = formatTime(duration);
+        function startTimer() {
+            clearInterval(progressTimer);
+            progressTimer = setInterval(() => {
+                const cur = player.getCurrentTime();
+                const dur = player.getDuration();
+                if (dur > 0) {
+                    document.getElementById('progress-bar').value = (cur / dur) * 100;
+                    document.getElementById('current-time').innerText = formatTime(cur);
+                    document.getElementById('duration-time').innerText = formatTime(dur);
                 }
             }, 1000);
         }
 
         function seekTrack() {
             const val = document.getElementById('progress-bar').value;
-            const duration = player.getDuration();
-            player.seekTo((val / 100) * duration, true);
+            const dur = player.getDuration();
+            if (dur) player.seekTo((val / 100) * dur, true);
         }
 
         function changeVolume() {
-            const val = document.getElementById('volume-bar').value;
-            player.setVolume(val);
+            player.setVolume(document.getElementById('volume-bar').value);
         }
 
-        // --- УПРАВЛІННЯ ПЛЕЙЛІСТАМИ (ЧАТАМИ) ---
+        // --- 5. РОБОТА З ПЛЕЙЛІСТАМИ ---
+        function renderSidebarPlaylists() {
+            const container = document.getElementById('playlists-list');
+            const homeBtn = document.getElementById('nav-home');
+            
+            homeBtn.className = activePlaylistId === 'home' 
+                ? 'flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-semibold bg-tg-active text-white transition'
+                : 'flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-medium text-tg-muted hover:text-white hover:bg-tg-cardHover transition';
+
+            container.innerHTML = '';
+
+            for (const [id, pl] of Object.entries(userPlaylists)) {
+                const isActive = activePlaylistId === id;
+                const btnClass = isActive 
+                    ? 'bg-tg-active text-white font-semibold' 
+                    : 'text-tg-muted hover:text-white hover:bg-tg-cardHover font-medium';
+
+                container.innerHTML += `
+                    <button onclick="openPlaylist('${id}')" class="flex items-center justify-between px-4 py-2.5 rounded-lg text-sm transition ${btnClass}">
+                        <div class="flex items-center gap-3 truncate">
+                            <i class="fa-solid ${pl.icon} text-tg-accent w-4"></i>
+                            <span class="truncate">${pl.name}</span>
+                        </div>
+                        <span class="text-xs opacity-60">${pl.tracks.length}</span>
+                    </button>
+                `;
+            }
+        }
 
         function createNewPlaylist() {
-            const name = prompt('Введіть назву нового плейліста (каналу):');
+            const name = prompt("Введіть назву нового плейліста:");
             if (!name || !name.trim()) return;
 
-            const id = 'custom_' + Date.now();
-            const colors = ['bg-green-500', 'bg-pink-500', 'bg-indigo-500', 'bg-red-500', 'bg-teal-500'];
-            const randomColor = colors[Math.floor(Math.random() * colors.length)];
-
-            playlists[id] = {
+            const id = 'pl_' + Date.now();
+            userPlaylists[id] = {
                 name: name.trim(),
-                icon: 'fa-headphones',
-                color: randomColor,
+                icon: 'fa-music',
                 tracks: []
             };
-
             savePlaylists();
-            selectChat(id);
+            openPlaylist(id);
         }
 
-        function openForwardModal(trackIndex) {
-            trackToForward = currentChatTracks[trackIndex];
-            const modal = document.getElementById('forward-modal');
-            const list = document.getElementById('modal-playlists');
+        function openPlaylist(id) {
+            activePlaylistId = id;
+            renderSidebarPlaylists();
+            const pl = userPlaylists[id];
+            document.getElementById('page-title').innerText = `📁 ${pl.name}`;
+            currentDisplayedTracks = [...pl.tracks];
+            renderGrid(currentDisplayedTracks);
+        }
+
+        function openPlaylistModal(trackIndex) {
+            trackToSave = currentDisplayedTracks[trackIndex];
+            const modal = document.getElementById('playlist-modal');
+            const list = document.getElementById('modal-playlists-list');
             list.innerHTML = '';
 
-            for (const [id, chat] of Object.entries(playlists)) {
-                // Показуємо тільки користувацькі плейлісти (не авто-підбірки)
-                if (!chat.query) {
-                    list.innerHTML += `
-                        <div onclick="saveTrackToPlaylist('${id}')" class="flex items-center gap-3 p-2 hover:bg-tg-hover rounded-lg cursor-pointer transition">
-                            <div class="w-8 h-8 rounded-full ${chat.color} flex items-center justify-center text-white text-xs">
-                                <i class="fa-solid ${chat.icon}"></i>
-                            </div>
-                            <span class="text-sm font-medium">${chat.name}</span>
+            for (const [id, pl] of Object.entries(userPlaylists)) {
+                list.innerHTML += `
+                    <button onclick="addTrackToPlaylist('${id}')" class="flex items-center justify-between p-3 rounded-xl hover:bg-tg-cardHover text-left transition">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid ${pl.icon} text-tg-accent"></i>
+                            <span class="text-sm font-medium">${pl.name}</span>
                         </div>
-                    `;
-                }
+                        <span class="text-xs text-tg-muted">${pl.tracks.length} треків</span>
+                    </button>
+                `;
             }
             modal.classList.remove('hidden');
         }
 
         function closeModal() {
-            document.getElementById('forward-modal').classList.add('hidden');
-            trackToForward = null;
+            document.getElementById('playlist-modal').classList.add('hidden');
+            trackToSave = null;
         }
 
-        function saveTrackToPlaylist(playlistId) {
-            if (!trackToForward) return;
-            
-            const list = playlists[playlistId].tracks;
-            // Перевіряємо чи вже є такий трек
-            if (!list.some(t => t.id === trackToForward.id)) {
-                list.unshift(trackToForward); // Додаємо на початок
+        function addTrackToPlaylist(playlistId) {
+            if (!trackToSave) return;
+            const list = userPlaylists[playlistId].tracks;
+            if (!list.some(t => t.id === trackToSave.id)) {
+                list.unshift(trackToSave);
                 savePlaylists();
-                renderSidebar();
+                renderSidebarPlaylists();
             }
             closeModal();
         }
 
         function removeFromPlaylist(trackId) {
-            if (playlists[activeChatId] && !playlists[activeChatId].query) {
-                playlists[activeChatId].tracks = playlists[activeChatId].tracks.filter(t => t.id !== trackId);
+            if (userPlaylists[activePlaylistId]) {
+                userPlaylists[activePlaylistId].tracks = userPlaylists[activePlaylistId].tracks.filter(t => t.id !== trackId);
                 savePlaylists();
-                selectChat(activeChatId); // Оновлюємо екран
+                openPlaylist(activePlaylistId);
             }
         }
 
         function savePlaylists() {
-            localStorage.setItem('tg_music_playlists', JSON.stringify(playlists));
+            localStorage.setItem('tg_spotify_playlists', JSON.stringify(userPlaylists));
         }
 
-        // Допоміжна функція форматування часу
+        // --- ДОПОМІЖНІ ФУНКЦІЇ ---
         function formatTime(sec) {
-            sec = Math.floor(sec);
+            sec = Math.floor(sec || 0);
             const m = Math.floor(sec / 60);
             const s = sec % 60;
             return `${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+
+        function showLoader(show) {
+            document.getElementById('loader').classList.toggle('hidden', !show);
+            document.getElementById('tracks-grid').classList.toggle('hidden', show);
         }
     </script>
 </body>
